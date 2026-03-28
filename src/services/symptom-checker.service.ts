@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 export interface QuestionSchema {
   id: string;
@@ -22,12 +22,12 @@ export interface DiagnosisSchema {
 }
 
 export class SymptomCheckerService {
-  private openai: OpenAI;
-
-  constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+  private getOpenAIClient(): OpenAI {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not configured in the backend environment.");
+    }
+    return new OpenAI({ apiKey });
   }
 
   async generateQuestions(symptoms: string): Promise<QuestionSchema[]> {
@@ -47,7 +47,7 @@ Respond ONLY with valid JSON in the exact following structure:
   ]
 }`;
 
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.getOpenAIClient().chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
@@ -115,7 +115,7 @@ Respond ONLY with valid JSON in the exact following structure, adapting the real
   "disclaimer": "This is only a basic health suggestion and not a confirmed diagnosis. Please consult a licensed doctor for proper treatment."
 }`;
 
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.getOpenAIClient().chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
