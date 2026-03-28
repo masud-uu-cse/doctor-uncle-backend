@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import demoRouter from './routes/demo.route';
+import symptomCheckerRouter from './routes/symptom-checker.route';
 
 dotenv.config();
 
@@ -15,6 +16,8 @@ app.use(express.json());
 
 // Routes
 app.use('/api/demo', demoRouter);
+app.use('/api/v1/symptom-checker', symptomCheckerRouter);
+ 
 
 // Database Connection and Server Start
 const startServer = async () => {
