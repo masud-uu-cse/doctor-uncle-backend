@@ -30,11 +30,15 @@ export class SymptomCheckerService {
     return new OpenAI({ apiKey });
   }
 
-  async generateQuestions(symptoms: string): Promise<QuestionSchema[]> {
+  async generateQuestions(symptoms: string, language: string = 'en'): Promise<QuestionSchema[]> {
+    const langInstruction = language === 'bn' ? 'Please generate all realistic options and the question text in Bengali (Bangla).' : 'Please generate all realistic options and the question text in English.';
     const prompt = `You are an expert medical AI assistant.
 A user reported the following overall symptoms: "${symptoms}".
 Please generate 4 to 6 relevant follow-up questions to understand their condition better.
 For each question, provide 4 to 6 realistic options the user can choose from.
+
+${langInstruction}
+Ensure that the JSON keys ("questions", "id", "question", "options") remain exactly as shown below in English.
 
 Respond ONLY with valid JSON in the exact following structure:
 {
@@ -62,7 +66,8 @@ Respond ONLY with valid JSON in the exact following structure:
     return parsed.questions || [];
   }
 
-  async generateDiagnosis(symptoms: string, answers: Answer[]): Promise<DiagnosisSchema> {
+  async generateDiagnosis(symptoms: string, answers: Answer[], language: string = 'en'): Promise<DiagnosisSchema> {
+    const langInstruction = language === 'bn' ? 'Please generate the detailed medical advice, summaries, descriptions, and all string values in Bengali (Bangla).' : 'Please generate the detailed medical advice, summaries, descriptions, and all string values in English.';
     const formattedAnswers = answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n');
     const prompt = `You are an expert medical AI assistant.
 A user reported the following overall symptoms: "${symptoms}".
@@ -70,6 +75,12 @@ They also provided the following additional context from follow-up questions:
 ${formattedAnswers}
 
 Please generate structured, safe medical advice based on this information. 
+${langInstruction}
+Ensure the advice is relevant for someone in Bangladesh, taking into account common local OTC medications. 
+Try to provide at least two+ relevant medicine suggestions if appropriate, along with clear instructions on when and how to take them.
+
+Ensure that all JSON keys ("summary", "severity", "level", "message", "possibleConditions", "name", "description", etc.) MUST remain EXACTLY as specified in English, only translating the values.
+
 Respond ONLY with valid JSON in the exact following structure, adapting the realistic medical possibilities:
 {
   "summary": "You may be experiencing a moderate level health issue based on your symptoms.",
@@ -79,38 +90,42 @@ Respond ONLY with valid JSON in the exact following structure, adapting the real
   },
   "possibleConditions": [
     {
-      "name": "Migraine",
-      "description": "A type of headache often causing pain on one side of the head, sometimes with nausea."
+      "name": "Common Cold / Seasonal Flu",
+      "description": "A viral infection of your nose and throat, often involving cough and fever."
     }
   ],
   "whatYouCanDoNow": {
     "medicines": [
       {
-        "name": "Paracetamol",
-        "usage": "Take for pain relief if needed (follow dosage instructions)."
+        "name": "Paracetamol (e.g., Napa/Ace)",
+        "usage": "Take 500mg-1g every 6 hours for fever or pain (maximum 4g per day)."
+      },
+      {
+        "name": "Antihistamine (e.g., Fexo/Desloratadine)",
+        "usage": "Take one tablet (120mg/5mg) once daily for runny nose or cold symptoms."
       }
     ],
     "homeCare": [
-      "Take rest in a quiet and dark room",
-      "Drink plenty of water",
-      "Avoid screen time and loud noise"
+      "Gargle with warm salt water for throat relief",
+      "Drink plenty of warm liquids (tea with ginger/honey)",
+      "Get adequate rest and steam inhalation"
     ]
   },
   "whenToTakeAction": {
     "nextSteps": [
-      "Monitor your symptoms for the next 24 hours",
-      "If symptoms do not improve, consult a doctor"
+      "Monitor temperature every 4-6 hours",
+      "If fever persists above 102°F or for more than 3 days, see a doctor"
     ],
-    "seeDoctorType": "Neurologist or General Physician"
+    "seeDoctorType": "General Physician"
   },
   "emergencyAlert": {
     "isEmergency": false,
     "warningSigns": [
-      "Severe vomiting",
-      "Blurred vision",
-      "High fever above 102°F"
+      "Difficulty breathing or chest pain",
+      "High fever that does not respond to medication",
+      "Severe persistent vomiting"
     ],
-    "message": "If you notice any of these symptoms, seek medical help immediately."
+    "message": "Seek immediate medical help if any warning signs develop."
   },
   "disclaimer": "This is only a basic health suggestion and not a confirmed diagnosis. Please consult a licensed doctor for proper treatment."
 }`;
