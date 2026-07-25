@@ -11,6 +11,12 @@ export interface Answer {
   answer: string;
 }
 
+export interface PatientInfo {
+  name?: string;
+  age?: string;
+  gender?: string;
+}
+
 export interface DiagnosisSchema {
   summary: string;
   severity: { level: string; message: string; };
@@ -30,10 +36,20 @@ export class SymptomCheckerService {
     return new OpenAI({ apiKey });
   }
 
-  async generateQuestions(symptoms: string, language: string = 'en'): Promise<QuestionSchema[]> {
+  async generateQuestions(symptoms: string, language: string = 'en', patientInfo?: PatientInfo): Promise<QuestionSchema[]> {
     const langInstruction = language === 'bn' ? 'Please generate all realistic options and the question text in Bengali (Bangla).' : 'Please generate all realistic options and the question text in English.';
+    
+    const patientDetails = patientInfo 
+      ? `Patient Profile:
+Name: ${patientInfo.name || 'Not specified'}
+Age: ${patientInfo.age || 'Not specified'}
+Gender: ${patientInfo.gender || 'Not specified'}`
+      : '';
+
     const prompt = `You are an expert medical AI assistant.
-A user reported the following overall symptoms: "${symptoms}".
+${patientDetails}
+
+The patient reported the following overall symptoms: "${symptoms}".
 Please generate 4 to 6 relevant follow-up questions to understand their condition better.
 For each question, provide 4 to 6 realistic options the user can choose from.
 
@@ -66,17 +82,27 @@ Respond ONLY with valid JSON in the exact following structure:
     return parsed.questions || [];
   }
 
-  async generateDiagnosis(symptoms: string, answers: Answer[], language: string = 'en'): Promise<DiagnosisSchema> {
+  async generateDiagnosis(symptoms: string, answers: Answer[], language: string = 'en', patientInfo?: PatientInfo): Promise<DiagnosisSchema> {
     const langInstruction = language === 'bn' ? 'Please generate the detailed medical advice, summaries, descriptions, and all string values in Bengali (Bangla).' : 'Please generate the detailed medical advice, summaries, descriptions, and all string values in English.';
+    
+    const patientDetails = patientInfo 
+      ? `Patient Profile:
+Name: ${patientInfo.name || 'Not specified'}
+Age: ${patientInfo.age || 'Not specified'}
+Gender: ${patientInfo.gender || 'Not specified'}`
+      : '';
+
     const formattedAnswers = answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join('\n');
     const prompt = `You are an expert medical AI assistant.
-A user reported the following overall symptoms: "${symptoms}".
+${patientDetails}
+
+The patient reported the following overall symptoms: "${symptoms}".
 They also provided the following additional context from follow-up questions:
 ${formattedAnswers}
 
 Please generate structured, safe medical advice based on this information. 
 ${langInstruction}
-Ensure the advice is relevant for someone in Bangladesh, taking into account common local OTC medications. 
+Ensure the advice is tailored appropriately for the patient's age and gender, and relevant for someone in Bangladesh, taking into account common local OTC medications. 
 Try to provide at least two+ relevant medicine suggestions if appropriate, along with clear instructions on when and how to take them.
 
 Ensure that all JSON keys ("summary", "severity", "level", "message", "possibleConditions", "name", "description", etc.) MUST remain EXACTLY as specified in English, only translating the values.

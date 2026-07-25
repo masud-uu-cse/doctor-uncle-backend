@@ -10,13 +10,13 @@ export class SymptomCheckerController {
 
   public generateQuestions = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { symptoms, language } = req.body;
+      const { symptoms, language, patientInfo } = req.body;
       if (!symptoms || typeof symptoms !== 'string') {
         res.status(400).json({ error: 'Symptoms string is required in the request body.' });
         return;
       }
 
-      const questions = await this.service.generateQuestions(symptoms, language || 'en');
+      const questions = await this.service.generateQuestions(symptoms, language || 'en', patientInfo);
       res.status(200).json({ questions });
     } catch (error: any) {
       console.error('Error generating questions:', error.message);
@@ -26,7 +26,7 @@ export class SymptomCheckerController {
 
   public generateDiagnosis = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { symptoms, answers, language } = req.body;
+      const { symptoms, answers, language, patientInfo } = req.body;
       if (!symptoms || typeof symptoms !== 'string') {
         res.status(400).json({ error: 'Symptoms string is required in the request body.' });
         return;
@@ -36,7 +36,7 @@ export class SymptomCheckerController {
         return;
       }
 
-      const diagnosis = await this.service.generateDiagnosis(symptoms, answers, language || 'en');
+      const diagnosis = await this.service.generateDiagnosis(symptoms, answers, language || 'en', patientInfo);
       res.status(200).json(diagnosis);
     } catch (error: any) {
       console.error('Error generating diagnosis:', error.message);
