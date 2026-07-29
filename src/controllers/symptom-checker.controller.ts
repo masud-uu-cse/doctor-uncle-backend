@@ -10,7 +10,8 @@ export class SymptomCheckerController {
 
   public generateQuestions = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { symptoms, language, patientInfo } = req.body;
+      const { symptoms, language, patientInfo, state } = req.body;
+      console.log(`[generateQuestions] SessionState: ${state || 'N/A'}`);
       if (!symptoms || typeof symptoms !== 'string') {
         res.status(400).json({ error: 'Symptoms string is required in the request body.' });
         return;
@@ -26,7 +27,8 @@ export class SymptomCheckerController {
 
   public generateDiagnosis = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { symptoms, answers, language, patientInfo } = req.body;
+      const { symptoms, answers, language, patientInfo, state } = req.body;
+      console.log(`[generateDiagnosis] SessionState: ${state || 'N/A'}`);
       if (!symptoms || typeof symptoms !== 'string') {
         res.status(400).json({ error: 'Symptoms string is required in the request body.' });
         return;
