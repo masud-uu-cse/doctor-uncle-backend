@@ -3,7 +3,9 @@ import OpenAI from "openai";
 export interface QuestionSchema {
   id: string;
   question: string;
-  options: string[];
+  inputType: 'text' | 'boolean' | 'radio' | 'scale' | 'select';
+  options?: string[];
+  required?: boolean;
 }
 
 export interface Answer {
@@ -37,7 +39,9 @@ export class SymptomCheckerService {
   }
 
   async generateQuestions(symptoms: string, language: string = 'en', patientInfo?: PatientInfo): Promise<QuestionSchema[]> {
-    const langInstruction = language === 'bn' ? 'Please generate all realistic options and the question text in Bengali (Bangla).' : 'Please generate all realistic options and the question text in English.';
+    const langInstruction = language === 'bn' 
+      ? 'Please generate all realistic options and the question text in Bengali (Bangla).' 
+      : 'Please generate all realistic options and the question text in English.';
     
     const patientDetails = patientInfo 
       ? `Patient Profile:
@@ -51,10 +55,14 @@ ${patientDetails}
 
 The patient reported the following overall symptoms: "${symptoms}".
 Please generate 4 to 6 relevant follow-up questions to understand their condition better.
-For each question, provide 4 to 6 realistic options the user can choose from.
+For each question, select the most appropriate inputType from: 'text', 'boolean', 'radio', 'scale', 'select'.
+If 'boolean', provide exactly two options: ["Yes", "No"] (or translated equivalents).
+If 'scale', provide numeric rating options from "1" to "10" or similar rating levels.
+If 'radio' or 'select', provide 3 to 5 realistic option choices for the user to choose from.
+If 'text', options should be an empty array or omitted.
 
 ${langInstruction}
-Ensure that the JSON keys ("questions", "id", "question", "options") remain exactly as shown below in English.
+Ensure that the JSON keys ("questions", "id", "question", "inputType", "options", "required") remain exactly as shown below in English.
 
 Respond ONLY with valid JSON in the exact following structure:
 {
@@ -62,7 +70,16 @@ Respond ONLY with valid JSON in the exact following structure:
     {
       "id": "q1",
       "question": "How long have you had the symptom?",
-      "options": ["Less than a day", "1-3 days", "A week", "More than a week"]
+      "inputType": "select",
+      "options": ["Less than a day", "1-3 days", "A week", "More than a week"],
+      "required": true
+    },
+    {
+      "id": "q2",
+      "question": "Is the headache accompanied by dizziness?",
+      "inputType": "boolean",
+      "options": ["Yes", "No"],
+      "required": true
     }
   ]
 }`;
